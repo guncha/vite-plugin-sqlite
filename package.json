@@ -1,0 +1,23 @@
+{
+  "name": "vite-plugin-sqlite",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Vite plugin to allow importing sqlite queries and generating type definitions",
+  "main": "dist/index.js",
+  "author": "Guntars Asmanis-Graham",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.5",
+    "typescript": "^5.2.2",
+    "vite": "^4.4.9",
+    "vitest": "^0.34.6"
+  },
+  "dependencies": {
+    "@appland/sql-parser": "getappmap/sql-parser",
+    "better-sqlite3": "^8.7.0"
+  }
+}
