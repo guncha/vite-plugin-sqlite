@@ -56,9 +56,16 @@ export async function getSchema(
   const optionalTables: Array<string> = [];
 
   /** The input fields to the query such as ? and :foo */
-  const inputFields: Array<TypescriptField> = [];
+  const inputFields: Array<TypescriptField & {idx: number}> = [];
 
   await visitQuery(parsedQuery);
+
+  // Use the input field offsets to assign param indices as used by sqlite3_bind_*
+  // TODO: This doesn't support explicit indices like ?1 or named params (with duplicates)
+  inputFields.sort((a, b) => a.idx - b.idx);
+  for (let i = 0; i < inputFields.length; i++) {
+    inputFields[i].idx = i + 1;
+  }
 
   const columns: Array<ColumnDefinition> = [];
   try {
@@ -91,6 +98,7 @@ export async function getSchema(
             name: res.name,
             type: "unknown",
             nullable: true,
+            idx: res.location.start.offset,
           });
           break;
         default:
@@ -118,6 +126,7 @@ export async function getSchema(
         name: exp.left.name,
         type: await getType(select.from.name, exp.left.name),
         nullable: await getNullable(select.from.name, exp.left.name),
+        idx: exp.right.location.start.offset,
       });
     } else {
       throw new Error("Not implemented!");
@@ -223,6 +232,7 @@ export async function getSchema(
         name: column.name,
         type: await getType(into.name, column.name),
         nullable: await getNullable(into.name, column.name),
+        idx: exp.location.start.offset,
       });
     }
   }

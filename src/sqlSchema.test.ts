@@ -66,7 +66,7 @@ describe("getSchema", () => {
         `)
     )
   );
-  it.only(
+  it(
     ...parseTest("SELECT ?", (query) =>
       expect(query).toMatchInlineSnapshot(`
         {
@@ -74,6 +74,7 @@ describe("getSchema", () => {
             {
               "name": "?",
               "nullable": true,
+              "pos": 1,
               "type": "unknown",
             },
           ],
@@ -96,6 +97,7 @@ describe("getSchema", () => {
             {
               "name": "id",
               "nullable": false,
+              "pos": 1,
               "type": "string",
             },
           ],
@@ -118,6 +120,7 @@ describe("getSchema", () => {
             {
               "name": "a1",
               "nullable": true,
+              "pos": 1,
               "type": "string",
             },
           ],
@@ -140,11 +143,13 @@ describe("getSchema", () => {
             {
               "name": "id",
               "nullable": false,
+              "pos": 1,
               "type": "string",
             },
             {
               "name": "a1",
               "nullable": true,
+              "pos": 2,
               "type": "string",
             },
           ],
@@ -161,11 +166,13 @@ describe("getSchema", () => {
             {
               "name": "id",
               "nullable": false,
+              "pos": 1,
               "type": "string",
             },
             {
               "name": "a1",
               "nullable": true,
+              "pos": 2,
               "type": "string",
             },
           ],

@@ -98,6 +98,10 @@ declare module "@appland/sql-parser" {
     type: "variable";
     format: "numbered";
     name: string;
+    location: {
+      start: { offset: number, line: number, column: number };
+      end: { offset: number, line: number, column: number };
+    }
   }
 
   function parse(sql): StatementList {}
