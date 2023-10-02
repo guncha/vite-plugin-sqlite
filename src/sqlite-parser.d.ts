@@ -1,5 +1,10 @@
 declare module "@appland/sql-parser" {
-  export type Identifier = TableIdentifier | ColumnIdentifier | StarIdentifier | ViewIdentifier;
+  export type Identifier =
+    | TableIdentifier
+    | ColumnIdentifier
+    | StarIdentifier
+    | ViewIdentifier;
+    
   export type Expression = BinaryExpression;
   export type Variable = NumberedVariable;
 
@@ -11,7 +16,7 @@ declare module "@appland/sql-parser" {
 
   export interface BinaryExpression {
     type: "expression";
-    variant: "operation",
+    variant: "operation";
     format: "binary";
     operation: "=";
     left: Identifier | Variable;
@@ -35,17 +40,17 @@ declare module "@appland/sql-parser" {
   }
 
   export interface Join {
-    type: "join",
-    variant: "left join",
-    source: TableIdentifier,
-    constraint: unknown,
-  };
+    type: "join";
+    variant: "left join";
+    source: TableIdentifier;
+    constraint: unknown;
+  }
 
   export interface JoinMap {
-    type: "map",
-    variant: "join",
-    source: TableIdentifier,
-    map: Join[],
+    type: "map";
+    variant: "join";
+    source: TableIdentifier;
+    map: Join[];
   }
 
   export interface ListExpression {
@@ -99,12 +104,12 @@ declare module "@appland/sql-parser" {
     format: "numbered";
     name: string;
     location: {
-      start: { offset: number, line: number, column: number };
-      end: { offset: number, line: number, column: number };
-    }
+      start: { offset: number; line: number; column: number };
+      end: { offset: number; line: number; column: number };
+    };
   }
 
-  function parse(sql): StatementList {}
+  function parse(sql: string): StatementList;
 
-  export = parse;
+  export default parse;
 }

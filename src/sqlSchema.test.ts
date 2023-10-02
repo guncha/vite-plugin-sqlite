@@ -72,9 +72,9 @@ describe("getSchema", () => {
         {
           "inputFields": [
             {
+              "idx": 1,
               "name": "?",
               "nullable": true,
-              "pos": 1,
               "type": "unknown",
             },
           ],
@@ -95,9 +95,9 @@ describe("getSchema", () => {
         {
           "inputFields": [
             {
+              "idx": 1,
               "name": "id",
               "nullable": false,
-              "pos": 1,
               "type": "string",
             },
           ],
@@ -118,9 +118,9 @@ describe("getSchema", () => {
         {
           "inputFields": [
             {
+              "idx": 1,
               "name": "a1",
               "nullable": true,
-              "pos": 1,
               "type": "string",
             },
           ],
@@ -141,15 +141,15 @@ describe("getSchema", () => {
         {
           "inputFields": [
             {
+              "idx": 1,
               "name": "id",
               "nullable": false,
-              "pos": 1,
               "type": "string",
             },
             {
+              "idx": 2,
               "name": "a1",
               "nullable": true,
-              "pos": 2,
               "type": "string",
             },
           ],
@@ -164,15 +164,15 @@ describe("getSchema", () => {
         {
           "inputFields": [
             {
+              "idx": 1,
               "name": "id",
               "nullable": false,
-              "pos": 1,
               "type": "string",
             },
             {
+              "idx": 2,
               "name": "a1",
               "nullable": true,
-              "pos": 2,
               "type": "string",
             },
           ],

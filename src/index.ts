@@ -1,10 +1,11 @@
-import type { Plugin } from "vite";
 import Database from "better-sqlite3";
-import { getSchema } from "./sqlSchema.js";
 import * as fs from "fs";
+import type { Plugin } from "vite";
 import { generateDts } from "./generateDts.js";
+import { generateWrapper } from "./generateWrapper.js";
+import { QuerySchema, getSchema } from "./sqlSchema.js";
 
-export default function sqlitePlugin(databasePath: string): Plugin {
+export default function sqlitePlugin(databasePath: string, execSql: (query: string, schema: QuerySchema) => string): Plugin {
   const db = new Database(databasePath, {
     readonly: true,
     fileMustExist: true,
@@ -20,8 +21,10 @@ export default function sqlitePlugin(databasePath: string): Plugin {
         // Bit of a hack to write .d.ts file from the plugin like this, but it works
         fs.writeFileSync(id + ".d.ts", generateDts(schema));
 
-        const code = `export default ${JSON.stringify(schema)};`;
-        return { code, map: null };
+        return {
+          code: `export default ${generateWrapper(src, schema, execSql)};`,
+          map: null,
+        };
       }
       return null;
     },

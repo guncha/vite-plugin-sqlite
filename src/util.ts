@@ -1,4 +1,5 @@
 import { readFileSync } from "fs";
+import { InputField } from "./sqlSchema.js";
 
 export function assert(
   condition: boolean,
@@ -25,6 +26,14 @@ function getDefaultAssertionMessage() {
 
 export function assertNever(_x: never): never {
   throw new Error("Unexpected value");
+}
+
+export function generateArgumentName(arg: InputField): string {
+  if (arg.name.startsWith("?")) {
+    return `p${arg.idx}`;
+  } else {
+    return arg.name;
+  }
 }
 
 export function raise(message: string): never {

@@ -1,19 +1,28 @@
 /// <reference path="sqlite-parser.d.ts" />
 
-import { ColumnDefinition, Database } from "better-sqlite3";
-import { assert, assertNever, raise } from "./util.js";
 import SQLiteParser, {
   BinaryExpression,
   InsertStatement,
   SelectStatement,
   StatementList,
 } from "@appland/sql-parser";
+import { ColumnDefinition, Database } from "better-sqlite3";
+import { assert, assertNever, raise } from "./util.js";
 
 export interface TypescriptField {
   name: string;
   type: string;
   nullable: boolean;
 }
+
+export interface InputField extends TypescriptField {
+  idx: number;
+}
+
+export type QuerySchema = {
+  inputFields: InputField[];
+  outputFields: TypescriptField[];
+};
 
 /** Result row for PRAGMA table_list  */
 interface TableListDetails {
@@ -39,11 +48,6 @@ interface ColumnInfo {
   hidden: 0 | 1;
 }
 
-export type QuerySchema = {
-  inputFields: TypescriptField[];
-  outputFields: TypescriptField[];
-};
-
 export async function getSchema(
   queryText: string,
   db: Database
@@ -56,7 +60,7 @@ export async function getSchema(
   const optionalTables: Array<string> = [];
 
   /** The input fields to the query such as ? and :foo */
-  const inputFields: Array<TypescriptField & {idx: number}> = [];
+  const inputFields: Array<InputField> = [];
 
   await visitQuery(parsedQuery);
 
