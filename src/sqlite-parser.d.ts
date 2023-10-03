@@ -65,6 +65,7 @@ declare module "@appland/sql-parser" {
     result: Array<ColumnIdentifier | StarIdentifier | Variable>;
     from?: TableIdentifier | JoinMap;
     where?: Array<Expression>;
+    limit?: LimitClause;
   }
 
   export interface TableIdentifier {
@@ -107,6 +108,13 @@ declare module "@appland/sql-parser" {
       start: { offset: number; line: number; column: number };
       end: { offset: number; line: number; column: number };
     };
+  }
+  
+  export interface LimitClause {
+    type: "expression",
+    variant: "limit",
+    start: Variable,
+    offset?: Variable,
   }
 
   function parse(sql: string): StatementList;

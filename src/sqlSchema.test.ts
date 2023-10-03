@@ -136,6 +136,58 @@ describe("getSchema", () => {
     )
   );
   it(
+    ...parseTest("SELECT id FROM a LIMIT ?", (query) =>
+      expect(query).toMatchInlineSnapshot(`
+        {
+          "inputFields": [
+            {
+              "idx": 1,
+              "name": "limit",
+              "nullable": false,
+              "type": "number",
+            },
+          ],
+          "outputFields": [
+            {
+              "name": "id",
+              "nullable": false,
+              "type": "string",
+            },
+          ],
+        }
+      `)
+    )
+  );
+  it(
+    ...parseTest("SELECT id FROM a LIMIT ? OFFSET ?", (query) =>
+      expect(query).toMatchInlineSnapshot(`
+        {
+          "inputFields": [
+            {
+              "idx": 1,
+              "name": "limit",
+              "nullable": false,
+              "type": "number",
+            },
+            {
+              "idx": 2,
+              "name": "offset",
+              "nullable": false,
+              "type": "number",
+            },
+          ],
+          "outputFields": [
+            {
+              "name": "id",
+              "nullable": false,
+              "type": "string",
+            },
+          ],
+        }
+      `)
+    )
+  );
+  it(
     ...parseTest("INSERT INTO a(id, a1) VALUES (?, ?)", (query) =>
       expect(query).toMatchInlineSnapshot(`
         {

@@ -3,8 +3,10 @@
 import SQLiteParser, {
   BinaryExpression,
   InsertStatement,
+  LimitClause,
   SelectStatement,
   StatementList,
+  Variable,
 } from "@appland/sql-parser";
 import { ColumnDefinition, Database } from "better-sqlite3";
 import { assert, assertNever, raise } from "./util.js";
@@ -85,6 +87,18 @@ export async function getSchema(
     outputFields,
   };
 
+  function addInputField(val: Variable, extra: Partial<InputField> = {}) {
+    assert(val.type === "variable");
+    assert(val.format === "numbered");
+
+    inputFields.push({
+      name: extra.name ?? val.name,
+      type: extra.type ?? "unknown",
+      nullable: extra.nullable ?? true,
+      idx: val.location.start.offset,
+    });
+  }
+
   async function visitResult(result: NonNullable<SelectStatement["result"]>) {
     for (const res of result) {
       switch (res.type) {
@@ -98,12 +112,7 @@ export async function getSchema(
           }
           break;
         case "variable":
-          inputFields.push({
-            name: res.name,
-            type: "unknown",
-            nullable: true,
-            idx: res.location.start.offset,
-          });
+          addInputField(res);
           break;
         default:
           assertNever(res);
@@ -126,11 +135,10 @@ export async function getSchema(
       assert(!exp.left.name.includes("."));
       assert(exp.right.name === "?");
 
-      inputFields.push({
+      addInputField(exp.right, {
         name: exp.left.name,
         type: await getType(select.from.name, exp.left.name),
         nullable: await getNullable(select.from.name, exp.left.name),
-        idx: exp.right.location.start.offset,
       });
     } else {
       throw new Error("Not implemented!");
@@ -211,6 +219,10 @@ export async function getSchema(
     if (statement.where) {
       await visitWhere(statement.where, statement);
     }
+
+    if (statement.limit) {
+      await visitLimit(statement.limit);
+    }
   }
 
   async function visitInsert(statement: InsertStatement) {
@@ -232,11 +244,27 @@ export async function getSchema(
       assert(exp.name === "?");
 
       const column = into.columns[parseInt(i, 10)] ?? raise("Missing column");
-      inputFields.push({
+      addInputField(exp, {
         name: column.name,
         type: await getType(into.name, column.name),
         nullable: await getNullable(into.name, column.name),
-        idx: exp.location.start.offset,
+      });
+    }
+  }
+
+  function visitLimit(limit: LimitClause) {
+    if (limit.start.type === "variable") {
+      addInputField(limit.start, {
+        name: "limit",
+        type: "number",
+        nullable: false,
+      });
+    }
+    if (limit.offset?.type === "variable") {
+      addInputField(limit.offset, {
+        name: "offset",
+        type: "number",
+        nullable: false,
       });
     }
   }
