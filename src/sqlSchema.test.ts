@@ -188,6 +188,39 @@ describe("getSchema", () => {
     )
   );
   it(
+    ...parseTest("SELECT COUNT(*) FROM a", (query) =>
+      expect(query).toMatchInlineSnapshot(`
+        {
+          "inputFields": [],
+          "outputFields": [
+            {
+              "name": "COUNT(*)",
+              "nullable": false,
+              "type": "number",
+            },
+          ],
+        }
+      `)
+    )
+  );
+  it(
+    ...parseTest("SELECT COUNT(*) as foo_count FROM a", (query) =>
+      // TODO Try to improve this case
+      expect(query).toMatchInlineSnapshot(`
+        {
+          "inputFields": [],
+          "outputFields": [
+            {
+              "name": "foo_count",
+              "nullable": true,
+              "type": "unknown",
+            },
+          ],
+        }
+      `)
+    )
+  );
+  it(
     ...parseTest("INSERT INTO a(id, a1) VALUES (?, ?)", (query) =>
       expect(query).toMatchInlineSnapshot(`
         {

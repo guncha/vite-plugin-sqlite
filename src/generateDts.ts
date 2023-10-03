@@ -13,6 +13,7 @@ export default async function(${params}): Promise<${
 `;
 }
 
+const PROPERTY_REGEX = /^[a-zA-Z_][a-zA-Z0-9_]*$/
 function generateOutputType(schema: QuerySchema): string {
   if (schema.outputFields.length === 0) {
     return "";
@@ -20,7 +21,7 @@ function generateOutputType(schema: QuerySchema): string {
   const fields = schema.outputFields
     .map(
       (field) =>
-        `  ${field.name}: ${field.type}${field.nullable ? ` | null` : ``};\n`
+        `  ${PROPERTY_REGEX.test(field.name) ? field.name : JSON.stringify(field.name)}: ${field.type}${field.nullable ? ` | null` : ``};\n`
     )
     .join("");
 

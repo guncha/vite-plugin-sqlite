@@ -115,7 +115,7 @@ export async function getSchema(
           addInputField(res);
           break;
         default:
-          assertNever(res);
+          break;
       }
     }
   }
@@ -295,6 +295,13 @@ export async function getSchema(
     type,
   }: ColumnDefinition): Promise<TypescriptField> {
     if (!column || !table) {
+      if (name.toLowerCase().startsWith("count(")) {
+        return {
+          name,
+          type: "number",
+          nullable: false,
+        }
+      }
       return {
         name,
         type: "unknown",
