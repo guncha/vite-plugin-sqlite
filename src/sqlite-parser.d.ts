@@ -59,11 +59,18 @@ declare module "@appland/sql-parser" {
     expression: Variable[];
   }
 
+  export interface FunctionCall {
+    type: "function";
+    variant: "table";
+    name: Identifier;
+    args: ListExpression;
+  }
+
   export interface SelectStatement {
     type: "statement";
     variant: "select";
     result: Array<ColumnIdentifier | StarIdentifier | Variable>;
-    from?: TableIdentifier | JoinMap;
+    from?: TableIdentifier | JoinMap | FunctionCall;
     where?: Array<Expression>;
     limit?: LimitClause;
   }

@@ -201,8 +201,17 @@ export async function getSchema(
         join.source.type === "identifier" && join.source.variant === "table"
       );
       assert(join.variant === "left join");
-
       optionalTables.push(join.source.name);
+      visitFrom(from.source);
+    } else if (from.type === "function" && from.variant === "table") {
+      assert(from.args.type === "expression");
+      assert(from.args.variant === "list");
+      for (const arg of from.args.expression) {
+        // NOTE We could get better argument names from the function definition
+        addInputField(arg);
+      }
+    } else {
+      assertNever(from);
     }
   }
 
@@ -327,6 +336,8 @@ export async function getSchema(
         return "string";
       case "BLOB":
         return "Array";
+      case null: // SQLite returns this for fts5 and possibly other virtual tables
+        return "unknown";
       default:
         throw new Error("Unhandled type: " + type);
     }

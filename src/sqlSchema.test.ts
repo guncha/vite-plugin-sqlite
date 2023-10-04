@@ -220,6 +220,52 @@ describe("getSchema", () => {
       `)
     )
   );
+  it("should parse virtual table calls", async () => {
+    db.exec(`CREATE VIRTUAL TABLE fts USING fts5(foo);`);
+    const query = await getSchema("SELECT * FROM fts(?)", db);
+    expect(query).toMatchInlineSnapshot(`
+      {
+        "inputFields": [
+          {
+            "idx": 1,
+            "name": "?",
+            "nullable": true,
+            "type": "unknown",
+          },
+        ],
+        "outputFields": [
+          {
+            "name": "foo",
+            "nullable": true,
+            "type": "unknown",
+          },
+        ],
+      }
+    `);
+  });
+  it("should parse virtual table calls with joins", async () => {
+    db.exec(`CREATE VIRTUAL TABLE fts USING fts5(foo);`);
+    const query = await getSchema("SELECT fts.foo FROM fts(?) left join a on fts.rowid = a.rowid", db);
+    expect(query).toMatchInlineSnapshot(`
+      {
+        "inputFields": [
+          {
+            "idx": 1,
+            "name": "?",
+            "nullable": true,
+            "type": "unknown",
+          },
+        ],
+        "outputFields": [
+          {
+            "name": "foo",
+            "nullable": true,
+            "type": "unknown",
+          },
+        ],
+      }
+    `);
+  });
   it(
     ...parseTest("INSERT INTO a(id, a1) VALUES (?, ?)", (query) =>
       expect(query).toMatchInlineSnapshot(`
