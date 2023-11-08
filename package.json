@@ -17,7 +17,7 @@
     "vitest": "^0.34.6"
   },
   "dependencies": {
-    "@appland/sql-parser": "getappmap/sql-parser",
+    "@appland/sql-parser": "guncha/sql-parser",
     "better-sqlite3": "^8.7.0"
   }
 }

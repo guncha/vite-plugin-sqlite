@@ -2,9 +2,9 @@
 # yarn lockfile v1
 
 
-"@appland/sql-parser@getappmap/sql-parser":
+"@appland/sql-parser@guncha/sql-parser":
   version "1.5.1"
-  resolved "https://codeload.github.com/getappmap/sql-parser/tar.gz/11acbbea6b269c0bcc8b22627cc3c8572cb7a2fc"
+  resolved "https://codeload.github.com/guncha/sql-parser/tar.gz/8d80d1dc3a5e1c043f2ea3d8959c4d486e62ed7a"
 
 "@esbuild/android-arm64@0.18.20":
   version "0.18.20"
