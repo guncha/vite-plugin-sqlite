@@ -14,13 +14,19 @@ declare module "@appland/sql-parser" {
     statement: Array<SelectStatement | CreateStatement | InsertStatement>;
   }
 
+  export interface LiteralExpression {
+    type: "literal";
+    variant: "decimal"; // Others too, probably
+    value: string;
+  }
+
   export interface BinaryExpression {
     type: "expression";
     variant: "operation";
     format: "binary";
-    operation: "=";
-    left: Identifier | Variable;
-    right: Identifier | Variable;
+    operation: "=" | "and" | "or";
+    left: Identifier | Variable | BinaryExpression | LiteralExpression;
+    right: Identifier | Variable | BinaryExpression | LiteralExpression;
   }
 
   export interface CreateStatement {

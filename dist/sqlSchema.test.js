@@ -110,6 +110,25 @@ describe("getSchema", () => {
           ],
         }
       `)));
+    it(...parseTest("SELECT id FROM a WHERE a1 = ? AND id = true", (query) => expect(query).toMatchInlineSnapshot(`
+        {
+          "inputFields": [
+            {
+              "idx": 1,
+              "name": "a1",
+              "nullable": true,
+              "type": "string",
+            },
+          ],
+          "outputFields": [
+            {
+              "name": "id",
+              "nullable": false,
+              "type": "string",
+            },
+          ],
+        }
+      `)));
     it(...parseTest("SELECT id FROM a LIMIT ?", (query) => expect(query).toMatchInlineSnapshot(`
         {
           "inputFields": [

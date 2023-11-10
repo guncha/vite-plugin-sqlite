@@ -58,10 +58,18 @@ export async function getSchema(queryText, db) {
             }
         }
     }
-    async function visitWhereExp(exp, select) {
+    async function visitBinaryExp(exp, select) {
+        // TODO Refactor this to handle more than just AND/OR/= and to handle nested expressions
         assert(exp.type === "expression");
         assert(exp.variant === "operation");
         assert(exp.format === "binary");
+        if (exp.operation === "and" || exp.operation === "or") {
+            assert(exp.left.type === "expression");
+            await visitBinaryExp(exp.left, select);
+            assert(exp.right.type === "expression");
+            await visitBinaryExp(exp.right, select);
+            return;
+        }
         assert(exp.operation === "=");
         assert(exp.left.type === "identifier");
         assert(exp.left.variant === "column");
@@ -75,13 +83,16 @@ export async function getSchema(queryText, db) {
                 nullable: await getNullable(select.from.name, exp.left.name),
             });
         }
+        else if (exp.right.type === "literal" || exp.right.type === "identifier") {
+            // Nothing to do here
+        }
         else {
             throw new Error("Not implemented!");
         }
     }
     async function visitWhere(where, select) {
         for (const exp of where) {
-            await visitWhereExp(exp, select);
+            await visitBinaryExp(exp, select);
         }
     }
     async function getTableType(tableName) {
