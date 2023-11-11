@@ -1,9 +1,10 @@
 import { readFileSync } from "fs";
-export function assert(condition, message = getDefaultAssertionMessage()) {
-    if (!condition) {
-        throw new Error(message);
-    }
-}
+import assert from "assert";
+export { assert };
+export const assertEqual = assert.strictEqual;
+// export function assertEqual<T>(actual: unknown, expected: T): asserts actual is T {
+//   assert.equal(actual, expected);
+// }
 function getDefaultAssertionMessage() {
     const stack = new Error().stack;
     if (stack) {

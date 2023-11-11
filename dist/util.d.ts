@@ -1,5 +1,8 @@
 import { InputField } from "./sqlSchema.js";
-export declare function assert(condition: boolean, message?: string): asserts condition;
+import assert from "assert";
+export { assert };
+type AssertFn = <T>(actual: unknown, expected: T) => asserts actual is T;
+export declare const assertEqual: AssertFn;
 export declare function assertNever(_x: never): never;
 export declare function generateArgumentName(arg: InputField): string;
 export declare function raise(message: string): never;

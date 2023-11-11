@@ -1,6 +1,6 @@
 /// <reference path="sqlite-parser.d.ts" />
 import SQLiteParser from "@appland/sql-parser";
-import { assert, assertNever, raise } from "./util.js";
+import { assert, assertEqual, assertNever, raise } from "./util.js";
 export async function getSchema(queryText, db) {
     const cachedTableInfo = new Map();
     const query = db.prepare(queryText);
@@ -29,8 +29,8 @@ export async function getSchema(queryText, db) {
         outputFields,
     };
     function addInputField(val, extra = {}) {
-        assert(val.type === "variable");
-        assert(val.format === "numbered");
+        assertEqual(val.type, "variable");
+        assertEqual(val.format, "numbered");
         inputFields.push({
             name: extra.name ?? val.name,
             type: extra.type ?? "unknown",
@@ -60,30 +60,32 @@ export async function getSchema(queryText, db) {
     }
     async function visitBinaryExp(exp, select) {
         // TODO Refactor this to handle more than just AND/OR/= and to handle nested expressions
-        assert(exp.type === "expression");
-        assert(exp.variant === "operation");
-        assert(exp.format === "binary");
+        assertEqual(exp.type, "expression");
+        assertEqual(exp.variant, "operation");
+        assertEqual(exp.format, "binary");
         if (exp.operation === "and" || exp.operation === "or") {
-            assert(exp.left.type === "expression");
+            assertEqual(exp.left.type, "expression");
             await visitBinaryExp(exp.left, select);
-            assert(exp.right.type === "expression");
+            assertEqual(exp.right.type, "expression");
             await visitBinaryExp(exp.right, select);
             return;
         }
-        assert(exp.operation === "=");
-        assert(exp.left.type === "identifier");
-        assert(exp.left.variant === "column");
+        assertEqual(exp.operation, "=");
+        assertEqual(exp.left.type, "identifier");
+        assertEqual(exp.left.variant, "column");
         if (exp.right.type === "variable") {
-            assert(select.from?.type === "identifier" && select.from.variant === "table");
+            assertEqual(select.from?.type, "identifier");
+            assertEqual(select.from.variant, "table");
             assert(!exp.left.name.includes("."));
-            assert(exp.right.name === "?");
+            assertEqual(exp.right.name, "?");
             addInputField(exp.right, {
                 name: exp.left.name,
                 type: await getType(select.from.name, exp.left.name),
                 nullable: await getNullable(select.from.name, exp.left.name),
             });
         }
-        else if (exp.right.type === "literal" || exp.right.type === "identifier") {
+        else if (exp.right.type === "literal" ||
+            exp.right.type === "identifier") {
             // Nothing to do here
         }
         else {
@@ -114,13 +116,13 @@ export async function getSchema(queryText, db) {
                         .prepare("SELECT sql FROM sqlite_schema WHERE name = ?")
                         .get(tableName));
                     const parsedView = SQLiteParser(sql);
-                    assert(parsedView.type === "statement");
-                    assert(parsedView.variant === "list");
-                    assert(parsedView.statement.length === 1);
+                    assertEqual(parsedView.type, "statement");
+                    assertEqual(parsedView.variant, "list");
+                    assertEqual(parsedView.statement.length, 1);
                     const createStatement = parsedView.statement[0];
-                    assert(createStatement.type === "statement");
-                    assert(createStatement.variant === "create");
-                    assert(createStatement.format === "view");
+                    assertEqual(createStatement.type, "statement");
+                    assertEqual(createStatement.variant, "create");
+                    assertEqual(createStatement.format, "view");
                     await visitSelect(createStatement.result);
                     break;
                 }
@@ -132,17 +134,17 @@ export async function getSchema(queryText, db) {
             }
         }
         else if (from.type === "map" && from.variant === "join") {
-            assert(from.map.length === 1);
+            assertEqual(from.map.length, 1);
             const join = from.map[0];
-            assert(join.type === "join");
+            assertEqual(join.type, "join");
             assert(join.source.type === "identifier" && join.source.variant === "table");
-            assert(join.variant === "left join");
+            assertEqual(join.variant, "left join");
             optionalTables.push(join.source.name);
             visitFrom(from.source);
         }
         else if (from.type === "function" && from.variant === "table") {
-            assert(from.args.type === "expression");
-            assert(from.args.variant === "list");
+            assertEqual(from.args.type, "expression");
+            assertEqual(from.args.variant, "list");
             for (const arg of from.args.expression) {
                 // NOTE We could get better argument names from the function definition
                 addInputField(arg);
@@ -153,8 +155,8 @@ export async function getSchema(queryText, db) {
         }
     }
     async function visitSelect(statement) {
-        assert(statement.type === "statement");
-        assert(statement.variant === "select");
+        assertEqual(statement.type, "statement");
+        assertEqual(statement.variant, "select");
         await visitResult(statement.result);
         if (statement.from) {
             await visitFrom(statement.from);
@@ -167,21 +169,21 @@ export async function getSchema(queryText, db) {
         }
     }
     async function visitInsert(statement) {
-        assert(statement.type === "statement");
-        assert(statement.variant === "insert");
-        assert(statement.action === "insert");
+        assertEqual(statement.type, "statement");
+        assertEqual(statement.variant, "insert");
+        assertEqual(statement.action, "insert");
         const into = statement.into;
-        assert(into.type === "identifier");
-        assert(into.variant === "expression");
-        assert(into.format === "table");
-        assert(statement.result.length === 1);
+        assertEqual(into.type, "identifier");
+        assertEqual(into.variant, "expression");
+        assertEqual(into.format, "table");
+        assertEqual(statement.result.length, 1);
         const result = statement.result[0];
-        assert(result.type === "expression");
-        assert(result.variant === "list");
+        assertEqual(result.type, "expression");
+        assertEqual(result.variant, "list");
         for (const [i, exp] of Object.entries(result.expression)) {
-            assert(exp.type === "variable");
-            assert(exp.format === "numbered");
-            assert(exp.name === "?");
+            assertEqual(exp.type, "variable");
+            assertEqual(exp.format, "numbered");
+            assertEqual(exp.name, "?");
             const column = into.columns[parseInt(i, 10)] ?? raise("Missing column");
             addInputField(exp, {
                 name: column.name,
@@ -207,11 +209,11 @@ export async function getSchema(queryText, db) {
         }
     }
     function visitQuery(list) {
-        assert(list.type === "statement");
-        assert(list.variant === "list");
-        assert(list.statement.length === 1);
+        assertEqual(list.type, "statement");
+        assertEqual(list.variant, "list");
+        assertEqual(list.statement.length, 1);
         const statement = list.statement[0];
-        assert(statement.type === "statement");
+        assertEqual(statement.type, "statement");
         if (statement.variant === "select") {
             return visitSelect(statement);
         }
@@ -240,7 +242,7 @@ export async function getSchema(queryText, db) {
                 nullable: true,
             };
         }
-        assert(database === "main");
+        assertEqual(database, "main");
         return {
             name,
             type: mapType(type),

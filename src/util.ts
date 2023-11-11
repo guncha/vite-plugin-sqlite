@@ -1,14 +1,14 @@
 import { readFileSync } from "fs";
 import { InputField } from "./sqlSchema.js";
+import assert from "assert";
 
-export function assert(
-  condition: boolean,
-  message = getDefaultAssertionMessage()
-): asserts condition {
-  if (!condition) {
-    throw new Error(message);
-  }
-}
+export { assert };
+type AssertFn = <T>(actual: unknown, expected: T) => asserts actual is T;
+export const assertEqual: AssertFn = assert.strictEqual;
+
+// export function assertEqual<T>(actual: unknown, expected: T): asserts actual is T {
+//   assert.equal(actual, expected);
+// }
 
 function getDefaultAssertionMessage() {
   const stack = new Error().stack;
