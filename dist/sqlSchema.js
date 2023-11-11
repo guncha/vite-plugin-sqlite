@@ -74,15 +74,29 @@ export async function getSchema(queryText, db) {
         assertEqual(exp.left.type, "identifier");
         assertEqual(exp.left.variant, "column");
         if (exp.right.type === "variable") {
-            assertEqual(select.from?.type, "identifier");
-            assertEqual(select.from.variant, "table");
-            assert(!exp.left.name.includes("."));
-            assertEqual(exp.right.name, "?");
-            addInputField(exp.right, {
-                name: exp.left.name,
-                type: await getType(select.from.name, exp.left.name),
-                nullable: await getNullable(select.from.name, exp.left.name),
-            });
+            if (select.from?.type === "identifier" &&
+                select.from.variant === "table") {
+                assert(!exp.left.name.includes("."));
+                assertEqual(exp.right.name, "?");
+                addInputField(exp.right, {
+                    name: exp.left.name,
+                    type: await getType(select.from.name, exp.left.name),
+                    nullable: await getNullable(select.from.name, exp.left.name),
+                });
+            }
+            else if (select.from?.type === "map" &&
+                select.from.variant === "join") {
+                // TODO Find the correct table for this column
+                assertEqual(exp.right.name, "?");
+                addInputField(exp.right, {
+                    name: exp.left.name,
+                    type: "unknown",
+                    nullable: true,
+                });
+            }
+            else {
+                throw new Error("Not implemented!");
+            }
         }
         else if (exp.right.type === "literal" ||
             exp.right.type === "identifier") {

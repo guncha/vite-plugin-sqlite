@@ -1,6 +1,6 @@
 import * as sqlite from "better-sqlite3";
 import { getSchema } from "./sqlSchema.js";
-import { describe, beforeEach, it, expect } from "vitest";
+import { describe, beforeEach, it, expect, afterAll } from "vitest";
 
 describe("getSchema", () => {
   let db: sqlite.Database;
@@ -268,7 +268,10 @@ describe("getSchema", () => {
   });
   it("should parse virtual table calls with joins", async () => {
     db.exec(`CREATE VIRTUAL TABLE fts USING fts5(foo);`);
-    const query = await getSchema("SELECT fts.foo FROM fts(?) left join a on fts.rowid = a.rowid", db);
+    const query = await getSchema(
+      "SELECT fts.foo FROM fts(?) LEFT JOIN a ON fts.rowid = a.rowid",
+      db
+    );
     expect(query).toMatchInlineSnapshot(`
       {
         "inputFields": [
@@ -346,12 +349,15 @@ describe("getSchema", () => {
       `)
     )
   );
-  it("should parse simple LEFT JOIN views", async () => {
-    db.exec(
-      "CREATE VIEW a_with_b AS SELECT a.a1, b.b1 FROM a LEFT JOIN b ON a.id = b.aId"
-    );
-    const query = await getSchema("SELECT * FROM a_with_b", db);
-    expect(query).toMatchInlineSnapshot(`
+  describe("with views", () => {
+    beforeEach(() => {
+      db.exec(
+        "CREATE VIEW a_with_b AS SELECT a.a1, b.b1 FROM a LEFT JOIN b ON a.id = b.aId"
+      );
+    });
+    it("should parse simple LEFT JOIN views", async () => {
+      expect(await getSchema("SELECT * FROM a_with_b", db))
+        .toMatchInlineSnapshot(`
       {
         "inputFields": [],
         "outputFields": [
@@ -368,5 +374,28 @@ describe("getSchema", () => {
         ],
       }
     `);
+    });
+  });
+  it("should parse LEFT JOINs with variables", async () => {
+    expect(await getSchema("SELECT a.a1 FROM a LEFT JOIN b ON a.id = b.aId WHERE a.a1 = ?", db))
+      .toMatchInlineSnapshot(`
+        {
+          "inputFields": [
+            {
+              "idx": 1,
+              "name": "a.a1",
+              "nullable": true,
+              "type": "unknown",
+            },
+          ],
+          "outputFields": [
+            {
+              "name": "a1",
+              "nullable": true,
+              "type": "string",
+            },
+          ],
+        }
+      `);
   });
 });
