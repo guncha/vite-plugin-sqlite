@@ -32,7 +32,7 @@ export function generateArgumentName(arg: InputField): string {
   if (arg.name.startsWith("?")) {
     return `p${arg.idx}`;
   } else {
-    return arg.name;
+    return arg.name.replace(/[^a-zA-Z0-9_]/g, "_");
   }
 }
 

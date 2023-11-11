@@ -25,7 +25,7 @@ export function generateArgumentName(arg) {
         return `p${arg.idx}`;
     }
     else {
-        return arg.name;
+        return arg.name.replace(/[^a-zA-Z0-9_]/g, "_");
     }
 }
 export function raise(message) {
