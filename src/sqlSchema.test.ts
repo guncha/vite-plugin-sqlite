@@ -1,16 +1,16 @@
 import * as sqlite from "better-sqlite3";
 import { getSchema } from "./sqlSchema.js";
-import { describe, beforeEach, it, expect, afterAll } from "vitest";
+import { describe, beforeEach, it, expect } from "vitest";
 
 describe("getSchema", () => {
   let db: sqlite.Database;
   beforeEach(async () => {
     db = await sqlite.default(":memory:");
     await db.exec(`
-      CREATE TABLE a(id TEXT NOT NULL PRIMARY KEY, a1 TEXT);
-      CREATE TABLE b(
-        b1 INTEGER NOT NULL PRIMARY KEY,
-        aId TEXT NOT NULL REFERENCES a(id)
+      CREATE TABLE fruit(id TEXT NOT NULL PRIMARY KEY, name TEXT NOT NULL, color TEXT);
+      CREATE TABLE stock(
+        quantity INTEGER NOT NULL PRIMARY KEY,
+        fruitId TEXT NOT NULL REFERENCES fruit(id) UNIQUE
       );
     `);
   });
@@ -23,7 +23,7 @@ describe("getSchema", () => {
   }
 
   it(
-    ...parseTest("SELECT * FROM a;", (query) =>
+    ...parseTest("SELECT * FROM fruit", (query) =>
       expect(query).toMatchInlineSnapshot(`
         {
           "inputFields": [],
@@ -34,7 +34,12 @@ describe("getSchema", () => {
               "type": "string",
             },
             {
-              "name": "a1",
+              "name": "name",
+              "nullable": false,
+              "type": "string",
+            },
+            {
+              "name": "color",
               "nullable": true,
               "type": "string",
             },
@@ -45,19 +50,19 @@ describe("getSchema", () => {
   );
   it(
     ...parseTest(
-      "SELECT a.a1, b.b1 FROM a LEFT JOIN b ON a.id = b.aId;",
+      "SELECT color, quantity FROM fruit LEFT JOIN stock ON fruit.id = stock.fruitId;",
       (query) =>
         expect(query).toMatchInlineSnapshot(`
           {
             "inputFields": [],
             "outputFields": [
               {
-                "name": "a1",
+                "name": "color",
                 "nullable": true,
                 "type": "string",
               },
               {
-                "name": "b1",
+                "name": "quantity",
                 "nullable": true,
                 "type": "number",
               },
@@ -90,7 +95,7 @@ describe("getSchema", () => {
     )
   );
   it(
-    ...parseTest("SELECT a1 FROM a WHERE id = ?", (query) =>
+    ...parseTest("SELECT color FROM fruit WHERE id = ?", (query) =>
       expect(query).toMatchInlineSnapshot(`
         {
           "inputFields": [
@@ -103,7 +108,7 @@ describe("getSchema", () => {
           ],
           "outputFields": [
             {
-              "name": "a1",
+              "name": "color",
               "nullable": true,
               "type": "string",
             },
@@ -113,36 +118,13 @@ describe("getSchema", () => {
     )
   );
   it(
-    ...parseTest("SELECT id FROM a WHERE a1 = ?", (query) =>
+    ...parseTest("SELECT id FROM fruit WHERE color = ?", (query) =>
       expect(query).toMatchInlineSnapshot(`
         {
           "inputFields": [
             {
               "idx": 1,
-              "name": "a1",
-              "nullable": true,
-              "type": "string",
-            },
-          ],
-          "outputFields": [
-            {
-              "name": "id",
-              "nullable": false,
-              "type": "string",
-            },
-          ],
-        }
-      `)
-    )
-  );
-  it(
-    ...parseTest("SELECT id FROM a WHERE a1 = ? AND id = true", (query) =>
-      expect(query).toMatchInlineSnapshot(`
-        {
-          "inputFields": [
-            {
-              "idx": 1,
-              "name": "a1",
+              "name": "color",
               "nullable": true,
               "type": "string",
             },
@@ -159,7 +141,30 @@ describe("getSchema", () => {
     )
   );
   it(
-    ...parseTest("SELECT id FROM a LIMIT ?", (query) =>
+    ...parseTest("SELECT id FROM fruit WHERE color = ? AND id = true", (query) =>
+      expect(query).toMatchInlineSnapshot(`
+        {
+          "inputFields": [
+            {
+              "idx": 1,
+              "name": "color",
+              "nullable": true,
+              "type": "string",
+            },
+          ],
+          "outputFields": [
+            {
+              "name": "id",
+              "nullable": false,
+              "type": "string",
+            },
+          ],
+        }
+      `)
+    )
+  );
+  it(
+    ...parseTest("SELECT id FROM fruit LIMIT ?", (query) =>
       expect(query).toMatchInlineSnapshot(`
         {
           "inputFields": [
@@ -182,7 +187,7 @@ describe("getSchema", () => {
     )
   );
   it(
-    ...parseTest("SELECT id FROM a LIMIT ? OFFSET ?", (query) =>
+    ...parseTest("SELECT id FROM fruit LIMIT ? OFFSET ?", (query) =>
       expect(query).toMatchInlineSnapshot(`
         {
           "inputFields": [
@@ -211,7 +216,7 @@ describe("getSchema", () => {
     )
   );
   it(
-    ...parseTest("SELECT COUNT(*) FROM a", (query) =>
+    ...parseTest("SELECT COUNT(*) FROM fruit", (query) =>
       expect(query).toMatchInlineSnapshot(`
         {
           "inputFields": [],
@@ -227,7 +232,7 @@ describe("getSchema", () => {
     )
   );
   it(
-    ...parseTest("SELECT COUNT(*) as foo_count FROM a", (query) =>
+    ...parseTest("SELECT COUNT(*) as foo_count FROM fruit", (query) =>
       // TODO Try to improve this case
       expect(query).toMatchInlineSnapshot(`
         {
@@ -269,7 +274,7 @@ describe("getSchema", () => {
   it("should parse virtual table calls with joins", async () => {
     db.exec(`CREATE VIRTUAL TABLE fts USING fts5(foo);`);
     const query = await getSchema(
-      "SELECT fts.foo FROM fts(?) LEFT JOIN a ON fts.rowid = a.rowid",
+      "SELECT fts.foo FROM fts(?) LEFT JOIN fruit ON fts.rowid = fruit.rowid",
       db
     );
     expect(query).toMatchInlineSnapshot(`
@@ -293,7 +298,7 @@ describe("getSchema", () => {
     `);
   });
   it(
-    ...parseTest("INSERT INTO a(id, a1) VALUES (?, ?)", (query) =>
+    ...parseTest("INSERT INTO fruit(id, color) VALUES (?, ?)", (query) =>
       expect(query).toMatchInlineSnapshot(`
         {
           "inputFields": [
@@ -305,7 +310,7 @@ describe("getSchema", () => {
             },
             {
               "idx": 2,
-              "name": "a1",
+              "name": "color",
               "nullable": true,
               "type": "string",
             },
@@ -316,7 +321,7 @@ describe("getSchema", () => {
     )
   );
   it(
-    ...parseTest("INSERT INTO a(id, a1) VALUES (?, ?) RETURNING *", (query) =>
+    ...parseTest("INSERT INTO fruit(id, color) VALUES (?, ?) RETURNING *", (query) =>
       expect(query).toMatchInlineSnapshot(`
         {
           "inputFields": [
@@ -328,7 +333,7 @@ describe("getSchema", () => {
             },
             {
               "idx": 2,
-              "name": "a1",
+              "name": "color",
               "nullable": true,
               "type": "string",
             },
@@ -340,7 +345,12 @@ describe("getSchema", () => {
               "type": "string",
             },
             {
-              "name": "a1",
+              "name": "name",
+              "nullable": false,
+              "type": "string",
+            },
+            {
+              "name": "color",
               "nullable": true,
               "type": "string",
             },
@@ -352,22 +362,22 @@ describe("getSchema", () => {
   describe("with views", () => {
     beforeEach(() => {
       db.exec(
-        "CREATE VIEW a_with_b AS SELECT a.a1, b.b1 FROM a LEFT JOIN b ON a.id = b.aId"
+        "CREATE VIEW fruit_with_stock AS SELECT fruit.color, stock.quantity FROM fruit LEFT JOIN stock ON fruit.id = stock.fruitId"
       );
     });
     it("should parse simple LEFT JOIN views", async () => {
-      expect(await getSchema("SELECT * FROM a_with_b", db))
+      expect(await getSchema("SELECT * FROM fruit_with_stock", db))
         .toMatchInlineSnapshot(`
       {
         "inputFields": [],
         "outputFields": [
           {
-            "name": "a1",
+            "name": "color",
             "nullable": true,
             "type": "string",
           },
           {
-            "name": "b1",
+            "name": "quantity",
             "nullable": true,
             "type": "number",
           },
@@ -377,20 +387,20 @@ describe("getSchema", () => {
     });
   });
   it("should parse LEFT JOINs with variables", async () => {
-    expect(await getSchema("SELECT a.a1 FROM a LEFT JOIN b ON a.id = b.aId WHERE a.a1 = ?", db))
+    expect(await getSchema("SELECT fruit.color FROM fruit LEFT JOIN stock ON fruit.id = stock.fruitId WHERE fruit.color = ?", db))
       .toMatchInlineSnapshot(`
         {
           "inputFields": [
             {
               "idx": 1,
-              "name": "a.a1",
+              "name": "fruit.color",
               "nullable": true,
               "type": "unknown",
             },
           ],
           "outputFields": [
             {
-              "name": "a1",
+              "name": "color",
               "nullable": true,
               "type": "string",
             },
