@@ -4,9 +4,15 @@ declare module "@appland/sql-parser" {
     | ColumnIdentifier
     | StarIdentifier
     | ViewIdentifier;
-    
-  export type Expression = BinaryExpression;
-  export type Variable = NumberedVariable;
+
+  export type Expression =
+    | BinaryExpression
+    | LiteralExpression
+    | Identifier
+    | Variable
+    | ListExpression;
+
+  export type Variable = NumberedVariable | NamedVariable;
 
   export interface StatementList {
     type: "statement";
@@ -16,7 +22,7 @@ declare module "@appland/sql-parser" {
 
   export interface LiteralExpression {
     type: "literal";
-    variant: "decimal"; // Others too, probably
+    variant: "blob" | "decimal" | "hexidecimal" | "null" | "text";
     value: string;
   }
 
@@ -24,9 +30,59 @@ declare module "@appland/sql-parser" {
     type: "expression";
     variant: "operation";
     format: "binary";
-    operation: "=" | "and" | "or";
-    left: Identifier | Variable | BinaryExpression | LiteralExpression;
-    right: Identifier | Variable | BinaryExpression | LiteralExpression;
+    operation:
+      | "*"
+      | "+"
+      | "-"
+      | "and"
+      | "="
+      | "<="
+      | "||"
+      | ">="
+      | ">"
+      | "|"
+      | "&"
+      | "<>"
+      | "<"
+      | "<=~"
+      | "in"
+      | "<>~"
+      | "/"
+      | "or"
+      | "=~"
+      | "between"
+      | "not between"
+      | "=="
+      | ">=+~"
+      | "not in"
+      | ">=~"
+      | "%"
+      | "!="
+      | "<~"
+      | "is"
+      | "like"
+      | "not"
+      | "~"
+      | "not exists"
+      | "exists"
+      | ">~"
+      | "<~+"
+      | "collate"
+      | "glob"
+      | "<+~"
+      | "<<"
+      | "<=+~"
+      | "distinct"
+      | "is not"
+      | "match"
+      | "not like"
+      | "ilike"
+      | "regexp"
+      | "not glob"
+      | "->>"
+      | "<->";
+    left: Expression;
+    right: Expression;
   }
 
   export interface CreateStatement {
@@ -41,13 +97,24 @@ declare module "@appland/sql-parser" {
     type: "statement";
     variant: "insert";
     action: "insert";
-    into: ExpressionIdentifier;
+    into: TableIdentifier | TableExpressionIdentifier;
     result: ListExpression[];
   }
 
   export interface Join {
     type: "join";
-    variant: "left join";
+    variant:
+      | "join"
+      | "table"
+      | "cross join"
+      | "left join"
+      | "natural join"
+      | "natural left join"
+      | "inner join"
+      | "left outer join"
+      | "natural cross join"
+      | "natural inner join"
+      | "natural left outer join";
     source: TableIdentifier;
     constraint: unknown;
   }
@@ -65,10 +132,16 @@ declare module "@appland/sql-parser" {
     expression: Variable[];
   }
 
+  export interface FunctionIdentifier {
+    type: "identifier";
+    variant: "function";
+    name: string;
+  }
+
   export interface FunctionCall {
     type: "function";
-    variant: "table";
-    name: Identifier;
+    variant?: "table";
+    name: FunctionIdentifier;
     args: ListExpression;
   }
 
@@ -78,13 +151,14 @@ declare module "@appland/sql-parser" {
     result: Array<ColumnIdentifier | StarIdentifier | Variable>;
     from?: TableIdentifier | JoinMap | FunctionCall;
     where?: Array<Expression>;
-    limit?: LimitClause;
+    limit?: LimitExpression;
   }
 
   export interface TableIdentifier {
     type: "identifier";
     variant: "table";
     name: string;
+    alias?: string;
   }
 
   export interface ColumnIdentifier {
@@ -93,7 +167,7 @@ declare module "@appland/sql-parser" {
     name: string;
   }
 
-  export interface ExpressionIdentifier {
+  export interface TableExpressionIdentifier {
     type: "identifier";
     variant: "expression";
     format: "table";
@@ -113,21 +187,38 @@ declare module "@appland/sql-parser" {
     name: string;
   }
 
+  interface Location {
+    start: {
+      offset: number;
+      line: number;
+      column: number;
+    };
+    end: {
+      offset: number;
+      line: number;
+      column: number;
+    };
+  }
+
   export interface NumberedVariable {
     type: "variable";
     format: "numbered";
     name: string;
-    location: {
-      start: { offset: number; line: number; column: number };
-      end: { offset: number; line: number; column: number };
-    };
+    location: Location;
   }
-  
-  export interface LimitClause {
-    type: "expression",
-    variant: "limit",
-    start: Variable,
-    offset?: Variable,
+
+  export interface NamedVariable {
+    type: "variable";
+    format: "named";
+    name: string;
+    location: Location;
+  }
+
+  export interface LimitExpression {
+    type: "expression";
+    variant: "limit";
+    start: Expression;
+    offset?: Expression;
   }
 
   function parse(sql: string): StatementList;
