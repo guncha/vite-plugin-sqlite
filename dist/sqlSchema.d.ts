@@ -12,4 +12,4 @@ export type QuerySchema = {
     inputFields: InputField[];
     outputFields: TypescriptField[];
 };
-export declare function getSchema(queryText: string, db: Database): Promise<QuerySchema>;
+export declare function getSchema(queryText: string, db: Database): QuerySchema;
