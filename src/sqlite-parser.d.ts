@@ -209,7 +209,7 @@ declare module "@appland/sql-parser" {
 
   export interface NamedVariable {
     type: "variable";
-    format: "named";
+    format: "named" | "tcl";
     name: string;
     location: Location;
   }

@@ -107,8 +107,8 @@ export function getSchema(queryText: string, db: Database): QuerySchema {
   function addInputField(val: Variable, extra: Partial<InputField> = {}) {
     assertEqual(val.type, "variable");
 
-    // Always use the :name for the input field name
-    const name = val.format === "named" ? val.name.replace(":", "") : extra.name ?? val.name;
+    // Always use the :name, $name or @name for named parameters
+    const name = (val.format === "named" || val.format === "tcl") ? val.name : extra.name ?? val.name;
     inputFields.push({
       name,
       type: extra.type ?? "unknown",
@@ -376,7 +376,7 @@ export function getSchema(queryText: string, db: Database): QuerySchema {
           ? table.alias === targetTable
           : table.name === targetTable;
       } else {
-        return table.columns.some((col) => col.name === targetColumn);
+        return table.columns.some((col) => col.name.toLowerCase() === targetColumn.toLowerCase());
       }
     });
 
@@ -388,7 +388,7 @@ export function getSchema(queryText: string, db: Database): QuerySchema {
 
     const table = matchingTables[0];
     const colInfo =
-      table.columns.find((col) => col.name === targetColumn) ??
+      table.columns.find((col) => col.name.toLowerCase() === targetColumn.toLowerCase()) ??
       raise("Column not found");
 
     return {

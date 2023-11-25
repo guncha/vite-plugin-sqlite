@@ -13,7 +13,7 @@ export default async function(${params}): Promise<${
 `;
 }
 
-const PROPERTY_REGEX = /^[a-zA-Z_][a-zA-Z0-9_]*$/
+const PROPERTY_REGEX = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
 function generateOutputType(schema: QuerySchema): string {
   if (schema.outputFields.length === 0) {
     return "";
@@ -21,7 +21,11 @@ function generateOutputType(schema: QuerySchema): string {
   const fields = schema.outputFields
     .map(
       (field) =>
-        `  ${PROPERTY_REGEX.test(field.name) ? field.name : JSON.stringify(field.name)}: ${field.type}${field.nullable ? ` | null` : ``};\n`
+        `  ${
+          PROPERTY_REGEX.test(field.name)
+            ? field.name
+            : JSON.stringify(field.name)
+        }: ${field.type}${field.nullable ? ` | null` : ``};\n`
     )
     .join("");
 
@@ -32,12 +36,20 @@ function generateParameters(schema: QuerySchema): string {
   if (schema.inputFields.length === 0) {
     return "";
   }
+  // Create a set of all parameters that have duplicate names
+  const duplicateNames = new Set<string>();
+  for (const field of schema.inputFields) {
+    if (schema.inputFields.filter((f) => f.name === field.name).length > 1) {
+      duplicateNames.add(field.name);
+    }
+  }
+
   const fields = schema.inputFields
     .map(
       (field) =>
-        `${generateArgumentName(field)}${field.nullable ? `?` : ``}: ${
-          field.type
-        }${field.nullable ? ` | null` : ``}`
+        `${generateArgumentName(field, duplicateNames.has(field.name))}${
+          field.nullable ? `?` : ``
+        }: ${field.type}${field.nullable ? ` | null` : ``}`
     )
     .join(", ");
 
