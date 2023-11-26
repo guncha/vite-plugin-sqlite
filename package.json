@@ -19,5 +19,6 @@
   "dependencies": {
     "@appland/sql-parser": "guncha/sql-parser",
     "better-sqlite3": "^8.7.0"
-  }
+  },
+  "packageManager": "yarn@4.0.2"
 }
