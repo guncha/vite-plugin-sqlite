@@ -20,12 +20,13 @@ function getDefaultAssertionMessage() {
 export function assertNever(_x) {
     throw new Error("Unexpected value");
 }
-export function generateArgumentName(arg) {
+export function generateArgumentName(arg, suffixIdx = false) {
+    const suffix = suffixIdx ? arg.idx : "";
     if (arg.name.startsWith("?")) {
-        return `p${arg.idx}`;
+        return `p${arg.idx}${suffix}`;
     }
     else {
-        return arg.name.replace(/[^a-zA-Z0-9_]/g, "_");
+        return arg.name.replace(/[^a-zA-Z0-9_]/g, "_") + suffix;
     }
 }
 export function raise(message) {

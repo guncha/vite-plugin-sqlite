@@ -53,70 +53,104 @@ describe("getSchema", () => {
           ],
         }
       `)));
-    it(...parseTest("SELECT id FROM fruit WHERE color = :the_color", (query) => expect(query).toMatchInlineSnapshot(`
-        {
-          "inputFields": [
+    it(...parseTest("SELECT id FROM fruit WHERE color = :the_color", (query) => expect(query.inputFields).toMatchInlineSnapshot(`
+        [
+          {
+            "idx": 1,
+            "name": ":the_color",
+            "nullable": true,
+            "type": "string",
+          },
+        ]
+      `)));
+    it(...parseTest("SELECT id FROM fruit WHERE color = @the_color", (query) => expect(query.inputFields).toMatchInlineSnapshot(`
+        [
+          {
+            "idx": 1,
+            "name": "@the_color",
+            "nullable": true,
+            "type": "string",
+          },
+        ]
+      `)));
+    it(...parseTest("SELECT id FROM fruit WHERE color = $the_color", (query) => expect(query.inputFields).toMatchInlineSnapshot(`
+        [
+          {
+            "idx": 1,
+            "name": "$the_color",
+            "nullable": true,
+            "type": "string",
+          },
+        ]
+      `)));
+    it(...parseTest("SELECT id FROM fruit WHERE name = ? OR color = $the_color", (query) => expect(query.inputFields).toMatchInlineSnapshot(`
+        [
+          {
+            "idx": 1,
+            "name": "name",
+            "nullable": false,
+            "type": "string",
+          },
+          {
+            "idx": 2,
+            "name": "$the_color",
+            "nullable": true,
+            "type": "string",
+          },
+        ]
+      `)));
+    describe("with camel cased names", () => {
+        beforeEach(() => {
+            db.exec("ALTER TABLE fruit ADD COLUMN isTasty INTEGER NOT NULL DEFAULT 1;");
+        });
+        it(...parseTest("SELECT id FROM fruit WHERE isTasty = ?", (query) => expect(query.inputFields).toMatchInlineSnapshot(`
+          [
             {
               "idx": 1,
-              "name": "the_color",
-              "nullable": true,
-              "type": "string",
-            },
-          ],
-          "outputFields": [
-            {
-              "name": "id",
+              "name": "istasty",
               "nullable": false,
-              "type": "string",
+              "type": "number",
             },
-          ],
-        }
-      `)));
-    it(...parseTest("SELECT id FROM fruit WHERE fruit.color = ?1", (query) => expect(query).toMatchInlineSnapshot(`
-        {
-          "inputFields": [
+          ]
+        `)));
+        it(...parseTest('SELECT id FROM fruit WHERE "isTasty" = ?', (query) => expect(query.inputFields).toMatchInlineSnapshot(`
+          [
             {
               "idx": 1,
-              "name": "fruit.color",
-              "nullable": true,
-              "type": "string",
-            },
-          ],
-          "outputFields": [
-            {
-              "name": "id",
+              "name": "isTasty",
               "nullable": false,
-              "type": "string",
+              "type": "number",
             },
-          ],
-        }
+          ]
+        `)));
+    });
+    it(...parseTest("SELECT id FROM fruit WHERE fruit.color = ?1", (query) => expect(query.inputFields).toMatchInlineSnapshot(`
+        [
+          {
+            "idx": 1,
+            "name": "fruit.color",
+            "nullable": true,
+            "type": "string",
+          },
+        ]
       `)));
-    it(...parseTest("SELECT id FROM fruit as f WHERE f.color = ?", (query) => expect(query).toMatchInlineSnapshot(`
-        {
-          "inputFields": [
-            {
-              "idx": 1,
-              "name": "f.color",
-              "nullable": true,
-              "type": "string",
-            },
-          ],
-          "outputFields": [
-            {
-              "name": "id",
-              "nullable": false,
-              "type": "string",
-            },
-          ],
-        }
+    it(...parseTest("SELECT id FROM fruit as f WHERE f.color = ?", (query) => expect(query.inputFields).toMatchInlineSnapshot(`
+        [
+          {
+            "idx": 1,
+            "name": "f.color",
+            "nullable": true,
+            "type": "string",
+          },
+        ]
       `)));
-    it(...parseTest("SELECT color, quantity FROM fruit LEFT JOIN stock ON fruit.id = stock.fruitId;", (query) => expect(query).toMatchInlineSnapshot(`
+    it(...parseTest("SELECT id, quantity FROM fruit LEFT JOIN stock ON fruit.id = stock.fruitId;", (query) => expect(query).toMatchInlineSnapshot(`
           {
             "inputFields": [],
             "outputFields": [
               {
-                "name": "color",
-                "nullable": true,
+                "name": "id",
+                "nullable": false,
                 "type": "string",
               },
               {
@@ -215,106 +249,61 @@ describe("getSchema", () => {
           ],
         }
       `)));
-    it(...parseTest("SELECT color FROM fruit WHERE id = ?", (query) => expect(query).toMatchInlineSnapshot(`
-        {
-          "inputFields": [
-            {
-              "idx": 1,
-              "name": "id",
-              "nullable": false,
-              "type": "string",
-            },
-          ],
-          "outputFields": [
-            {
-              "name": "color",
-              "nullable": true,
-              "type": "string",
-            },
-          ],
-        }
+    it(...parseTest("SELECT color FROM fruit WHERE id = ?", (query) => expect(query.inputFields).toMatchInlineSnapshot(`
+        [
+          {
+            "idx": 1,
+            "name": "id",
+            "nullable": false,
+            "type": "string",
+          },
+        ]
       `)));
-    it(...parseTest("SELECT id FROM fruit WHERE color = ?", (query) => expect(query).toMatchInlineSnapshot(`
-        {
-          "inputFields": [
-            {
-              "idx": 1,
-              "name": "color",
-              "nullable": true,
-              "type": "string",
-            },
-          ],
-          "outputFields": [
-            {
-              "name": "id",
-              "nullable": false,
-              "type": "string",
-            },
-          ],
-        }
+    it(...parseTest("SELECT id FROM fruit WHERE color = ?", (query) => expect(query.inputFields).toMatchInlineSnapshot(`
+        [
+          {
+            "idx": 1,
+            "name": "color",
+            "nullable": true,
+            "type": "string",
+          },
+        ]
       `)));
-    it(...parseTest("SELECT id FROM fruit WHERE color = ? AND id = true", (query) => expect(query).toMatchInlineSnapshot(`
-        {
-          "inputFields": [
+    it(...parseTest("SELECT id FROM fruit WHERE color = ? AND id = true", (query) => expect(query.inputFields).toMatchInlineSnapshot(`
+          [
             {
               "idx": 1,
               "name": "color",
               "nullable": true,
               "type": "string",
             },
-          ],
-          "outputFields": [
-            {
-              "name": "id",
-              "nullable": false,
-              "type": "string",
-            },
-          ],
-        }
+          ]
+        `)));
+    it(...parseTest("SELECT id FROM fruit LIMIT ?", (query) => expect(query.inputFields).toMatchInlineSnapshot(`
+        [
+          {
+            "idx": 1,
+            "name": "limit",
+            "nullable": false,
+            "type": "number",
+          },
+        ]
       `)));
-    it(...parseTest("SELECT id FROM fruit LIMIT ?", (query) => expect(query).toMatchInlineSnapshot(`
-        {
-          "inputFields": [
-            {
-              "idx": 1,
-              "name": "limit",
-              "nullable": false,
-              "type": "number",
-            },
-          ],
-          "outputFields": [
-            {
-              "name": "id",
-              "nullable": false,
-              "type": "string",
-            },
-          ],
-        }
-      `)));
-    it(...parseTest("SELECT id FROM fruit LIMIT ? OFFSET ?", (query) => expect(query).toMatchInlineSnapshot(`
-        {
-          "inputFields": [
-            {
-              "idx": 1,
-              "name": "limit",
-              "nullable": false,
-              "type": "number",
-            },
-            {
-              "idx": 2,
-              "name": "offset",
-              "nullable": false,
-              "type": "number",
-            },
-          ],
-          "outputFields": [
-            {
-              "name": "id",
-              "nullable": false,
-              "type": "string",
-            },
-          ],
-        }
+    it(...parseTest("SELECT id FROM fruit LIMIT ? OFFSET ?", (query) => expect(query.inputFields).toMatchInlineSnapshot(`
+        [
+          {
+            "idx": 1,
+            "name": "limit",
+            "nullable": false,
+            "type": "number",
+          },
+          {
+            "idx": 2,
+            "name": "offset",
+            "nullable": false,
+            "type": "number",
+          },
+        ]
       `)));
     it(...parseTest("SELECT COUNT(*) FROM fruit", (query) => expect(query).toMatchInlineSnapshot(`
         {
@@ -388,6 +377,25 @@ describe("getSchema", () => {
       }
     `);
     });
+    it.only(...parseTest("UPDATE fruit SET name = ? WHERE id = ?", (query) => expect(query).toMatchInlineSnapshot(`
+        {
+          "inputFields": [
+            {
+              "idx": 1,
+              "name": "name",
+              "nullable": false,
+              "type": "string",
+            },
+            {
+              "idx": 2,
+              "name": "id",
+              "nullable": false,
+              "type": "string",
+            },
+          ],
+          "outputFields": [],
+        }
+      `)));
     it(...parseTest("INSERT INTO fruit VALUES (?, ?, ?)", (query) => expect(query).toMatchInlineSnapshot(`
         {
           "inputFields": [

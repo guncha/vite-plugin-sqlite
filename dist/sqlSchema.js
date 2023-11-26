@@ -9,7 +9,7 @@ export function getSchema(queryText, db) {
     const optionalTables = [];
     const lastStmt = parsedQuery.statement[parsedQuery.statement.length - 1];
     if (isSelectStatement(lastStmt)) {
-        for (const table of getTablesFromSelect(lastStmt)) {
+        for (const table of getTablesFromStatement(lastStmt)) {
             if (table.optional) {
                 optionalTables.push(table.name);
             }
@@ -37,9 +37,10 @@ export function getSchema(queryText, db) {
         outputFields,
     };
     function addInputField(val, extra = {}) {
+        console.log("addInputField", val, extra, new Error().stack);
         assertEqual(val.type, "variable");
-        // Always use the :name for the input field name
-        const name = val.format === "named" ? val.name.replace(":", "") : extra.name ?? val.name;
+        // Always use the :name, $name or @name for named parameters
+        const name = (val.format === "named" || val.format === "tcl") ? val.name : extra.name ?? val.name;
         inputFields.push({
             name,
             type: extra.type ?? "unknown",
@@ -85,10 +86,10 @@ export function getSchema(queryText, db) {
             // Get type information from otherNode. This assumes that all binary operations
             // use the same types for both arguments, which is mostly the case.
             if (isColumnIdentifier(otherNode)) {
-                const selectNode = parents.find(isSelectStatement) ?? raise("No select statement found");
+                const selectNode = parents.find(isTableStatement) ?? raise("No table statement found");
                 addInputField(node, {
                     name: otherNode.name,
-                    ...getTypeFromSelect(otherNode.name, selectNode),
+                    ...getTypeFromTable(otherNode.name, selectNode),
                 });
             }
             else if (isLiteralExp(otherNode)) {
@@ -164,6 +165,16 @@ export function getSchema(queryText, db) {
                 throw new Error("Unknown list expression parent");
             }
         }
+        else if (isAssignment(parentNode)) {
+            assertEqual(parentKey, "value");
+            assertEqual(parentNode.target.type, "identifier");
+            assertEqual(parentNode.target.variant, "column");
+            const tableStmt = parents.find(isTableStatement) ?? raise("No table statement found");
+            addInputField(node, {
+                name: parentNode.target.name,
+                ...getTypeFromTable(parentNode.target.name, tableStmt),
+            });
+        }
         else {
             // TODO Handle other cases
             addInputField(node);
@@ -233,45 +244,60 @@ export function getSchema(queryText, db) {
         const colInfo = getColumnInfo(table, column) ?? raise("Column not found");
         return colInfo.notnull === 0;
     }
-    function getTablesFromSelect(select) {
+    function getTablesFromStatement(stmt) {
         const tables = [];
-        if (select.from?.type === "identifier" && select.from.variant === "table") {
+        if (isUpdateStatement(stmt)) {
+            assert(stmt.into.type === "identifier");
+            assert(stmt.into.variant === "table");
             tables.push({
-                alias: select.from.alias,
-                name: select.from.name,
+                alias: stmt.into.alias,
+                name: stmt.into.name,
                 optional: false,
-                columns: getTableInfo(select.from.name),
+                columns: getTableInfo(stmt.into.name),
             });
         }
-        else if (select.from?.type === "map" && select.from.variant === "join") {
-            tables.push({
-                alias: select.from.source.alias,
-                name: select.from.source.name,
-                optional: false,
-                columns: getTableInfo(select.from.source.name),
-            });
-            for (const join of select.from.map) {
-                assertEqual(join.variant, "left join");
-                assertEqual(join.source.type, "identifier");
-                assertEqual(join.source.variant, "table");
+        else if (isSelectStatement(stmt)) {
+            if (stmt.from?.type === "identifier" && stmt.from.variant === "table") {
                 tables.push({
-                    alias: join.source.alias,
-                    name: join.source.name,
-                    optional: true,
-                    columns: getTableInfo(join.source.name),
+                    alias: stmt.from.alias,
+                    name: stmt.from.name,
+                    optional: false,
+                    columns: getTableInfo(stmt.from.name),
                 });
             }
-        }
-        else if (select.from?.type === "function" || select.from === undefined) {
-            // Nothing to do
+            else if (stmt.from?.type === "map" && stmt.from.variant === "join") {
+                tables.push({
+                    alias: stmt.from.source.alias,
+                    name: stmt.from.source.name,
+                    optional: false,
+                    columns: getTableInfo(stmt.from.source.name),
+                });
+                for (const join of stmt.from.map) {
+                    assertEqual(join.variant, "left join");
+                    assertEqual(join.source.type, "identifier");
+                    assertEqual(join.source.variant, "table");
+                    tables.push({
+                        alias: join.source.alias,
+                        name: join.source.name,
+                        optional: true,
+                        columns: getTableInfo(join.source.name),
+                    });
+                }
+            }
+            else if (stmt.from?.type === "function" || stmt.from === undefined) {
+                // Nothing to do
+            }
+            else {
+                assertNever(stmt.from);
+            }
         }
         else {
-            assertNever(select.from);
+            assertNever(stmt);
         }
         return tables;
     }
-    function getTypeFromSelect(column, select) {
-        const tables = getTablesFromSelect(select);
+    function getTypeFromTable(column, tableStmt) {
+        const tables = getTablesFromStatement(tableStmt);
         const [targetDb, targetTable, targetColumn] = getDatabaseAndTable(column);
         if (targetDb) {
             throw new Error("Column specifiers with databases not supported: " + targetDb);
@@ -283,7 +309,7 @@ export function getSchema(queryText, db) {
                     : table.name === targetTable;
             }
             else {
-                return table.columns.some((col) => col.name === targetColumn);
+                return table.columns.some((col) => col.name.toLowerCase() === targetColumn.toLowerCase());
             }
         });
         if (matchingTables.length === 0) {
@@ -293,7 +319,7 @@ export function getSchema(queryText, db) {
             throw new Error("Ambiguous column name: " + column);
         }
         const table = matchingTables[0];
-        const colInfo = table.columns.find((col) => col.name === targetColumn) ??
+        const colInfo = table.columns.find((col) => col.name.toLowerCase() === targetColumn.toLowerCase()) ??
             raise("Column not found");
         return {
             type: mapType(colInfo.type),
@@ -364,63 +390,68 @@ export function getSchema(queryText, db) {
         return data;
     }
 }
-/** Check if the node is a variable */
 function isVariable(node) {
     return (typeof node === "object" &&
         node !== null &&
         node.type === "variable");
 }
-/** Check if node is a binary expression */
 function isBinaryExp(node) {
     return (typeof node === "object" &&
         node !== null &&
         node.type === "expression" &&
         node.format === "binary");
 }
-/** Check if node is a column identifier */
 function isColumnIdentifier(node) {
     return (typeof node === "object" &&
         node !== null &&
         node.type === "identifier" &&
         node.variant === "column");
 }
-/** Check if node is a literal */
 function isLiteralExp(node) {
     return (typeof node === "object" &&
         node !== null &&
         node.type === "literal");
 }
-/** Check if node is a limit expression */
 function isLimitExpression(node) {
     return (typeof node === "object" &&
         node !== null &&
         node.type === "expression" &&
         node.variant === "limit");
 }
-/** Check if node is a select statement */
 function isSelectStatement(node) {
     return (typeof node === "object" &&
         node !== null &&
         node.type === "statement" &&
         node.variant === "select");
 }
-/** Check if node is a list expression */
+function isUpdateStatement(node) {
+    return (typeof node === "object" &&
+        node !== null &&
+        node.type === "statement" &&
+        node.variant === "update");
+}
+function isTableStatement(node) {
+    return isSelectStatement(node) || isUpdateStatement(node);
+}
 function isListExpression(node) {
     return (typeof node === "object" &&
         node !== null &&
         node.type === "expression" &&
         node.variant === "list");
 }
-/** Check if node is an insert statement */
 function isInsertStatement(node) {
     return (typeof node === "object" &&
         node !== null &&
         node.type === "statement" &&
         node.variant === "insert");
 }
-/** Check if node is a function */
 function isFunction(node) {
     return (typeof node === "object" &&
         node !== null &&
         node.type === "function");
+}
+function isAssignment(node) {
+    return (typeof node === "object" &&
+        node !== null &&
+        node.type === "assignment");
 }

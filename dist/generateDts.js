@@ -14,7 +14,9 @@ function generateOutputType(schema) {
         return "";
     }
     const fields = schema.outputFields
-        .map((field) => `  ${PROPERTY_REGEX.test(field.name) ? field.name : JSON.stringify(field.name)}: ${field.type}${field.nullable ? ` | null` : ``};\n`)
+        .map((field) => `  ${PROPERTY_REGEX.test(field.name)
+        ? field.name
+        : JSON.stringify(field.name)}: ${field.type}${field.nullable ? ` | null` : ``};\n`)
         .join("");
     return `export type OutputType = {\n${fields}}`;
 }
@@ -22,8 +24,15 @@ function generateParameters(schema) {
     if (schema.inputFields.length === 0) {
         return "";
     }
+    // Create a set of all parameters that have duplicate names
+    const duplicateNames = new Set();
+    for (const field of schema.inputFields) {
+        if (schema.inputFields.filter((f) => f.name === field.name).length > 1) {
+            duplicateNames.add(field.name);
+        }
+    }
     const fields = schema.inputFields
-        .map((field) => `${generateArgumentName(field)}${field.nullable ? `?` : ``}: ${field.type}${field.nullable ? ` | null` : ``}`)
+        .map((field) => `${generateArgumentName(field, duplicateNames.has(field.name))}${field.nullable ? `?` : ``}: ${field.type}${field.nullable ? ` | null` : ``}`)
         .join(", ");
     return fields;
 }
