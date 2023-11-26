@@ -377,7 +377,7 @@ describe("getSchema", () => {
       }
     `);
     });
-    it.only(...parseTest("UPDATE fruit SET name = ? WHERE id = ?", (query) => expect(query).toMatchInlineSnapshot(`
+    it(...parseTest("UPDATE fruit SET name = ? WHERE id = ?", (query) => expect(query).toMatchInlineSnapshot(`
         {
           "inputFields": [
             {

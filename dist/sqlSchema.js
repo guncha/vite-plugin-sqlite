@@ -37,10 +37,11 @@ export function getSchema(queryText, db) {
         outputFields,
     };
     function addInputField(val, extra = {}) {
-        console.log("addInputField", val, extra, new Error().stack);
         assertEqual(val.type, "variable");
         // Always use the :name, $name or @name for named parameters
-        const name = (val.format === "named" || val.format === "tcl") ? val.name : extra.name ?? val.name;
+        const name = val.format === "named" || val.format === "tcl"
+            ? val.name
+            : extra.name ?? val.name;
         inputFields.push({
             name,
             type: extra.type ?? "unknown",
@@ -319,8 +320,7 @@ export function getSchema(queryText, db) {
             throw new Error("Ambiguous column name: " + column);
         }
         const table = matchingTables[0];
-        const colInfo = table.columns.find((col) => col.name.toLowerCase() === targetColumn.toLowerCase()) ??
-            raise("Column not found");
+        const colInfo = table.columns.find((col) => col.name.toLowerCase() === targetColumn.toLowerCase()) ?? raise("Column not found");
         return {
             type: mapType(colInfo.type),
             nullable: colInfo.notnull === 0 || table.optional,

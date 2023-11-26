@@ -17,7 +17,7 @@ declare module "@appland/sql-parser" {
   export interface StatementList {
     type: "statement";
     variant: "list";
-    statement: Array<SelectStatement | CreateStatement | InsertStatement>;
+    statement: Array<SelectStatement | CreateStatement | InsertStatement | UpdateStatement>;
   }
 
   export interface LiteralExpression {
@@ -99,6 +99,20 @@ declare module "@appland/sql-parser" {
     action: "insert";
     into: TableIdentifier | TableExpressionIdentifier;
     result: ListExpression[];
+  }
+
+  export interface UpdateStatement {
+    type: "statement";
+    variant: "update";
+    into: TableIdentifier | TableExpressionIdentifier;
+    set: Assignment[];
+    where?: Array<Expression>;
+  }
+
+  export interface Assignment {
+    type: "assignment";
+    target: ColumnIdentifier;
+    value: Expression;
   }
 
   export interface Join {

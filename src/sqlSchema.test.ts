@@ -485,6 +485,29 @@ describe("getSchema", () => {
     `);
   });
   it(
+    ...parseTest("UPDATE fruit SET name = ? WHERE id = ?", (query) =>
+      expect(query).toMatchInlineSnapshot(`
+        {
+          "inputFields": [
+            {
+              "idx": 1,
+              "name": "name",
+              "nullable": false,
+              "type": "string",
+            },
+            {
+              "idx": 2,
+              "name": "id",
+              "nullable": false,
+              "type": "string",
+            },
+          ],
+          "outputFields": [],
+        }
+      `)
+    )
+  );
+  it(
     ...parseTest("INSERT INTO fruit VALUES (?, ?, ?)", (query) =>
       expect(query).toMatchInlineSnapshot(`
         {
