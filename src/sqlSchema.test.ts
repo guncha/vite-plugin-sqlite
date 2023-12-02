@@ -109,6 +109,20 @@ describe("getSchema", () => {
     )
   );
   it(
+    ...parseTest("SELECT id FROM fruit WHERE color = iif(:color IS NULL, 'red', :color)", (query) =>
+      expect(query.inputFields).toMatchInlineSnapshot(`
+        [
+          {
+            "idx": 1,
+            "name": ":color",
+            "nullable": true,
+            "type": "unknown",
+          },
+        ]
+      `)
+    )
+  );
+  it(
     ...parseTest("SELECT id FROM fruit WHERE name = ? OR color = $the_color", (query) =>
       expect(query.inputFields).toMatchInlineSnapshot(`
         [
@@ -497,6 +511,23 @@ describe("getSchema", () => {
             },
             {
               "idx": 2,
+              "name": "id",
+              "nullable": false,
+              "type": "string",
+            },
+          ],
+          "outputFields": [],
+        }
+      `)
+    )
+  );
+  it(
+    ...parseTest("DELETE FROM fruit WHERE id = ?", (query) =>
+      expect(query).toMatchInlineSnapshot(`
+        {
+          "inputFields": [
+            {
+              "idx": 1,
               "name": "id",
               "nullable": false,
               "type": "string",

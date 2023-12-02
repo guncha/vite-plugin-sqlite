@@ -109,6 +109,13 @@ declare module "@appland/sql-parser" {
     where?: Array<Expression>;
   }
 
+  export interface DeleteStatement {
+    type: "statement";
+    variant: "delete";
+    from: TableIdentifier;
+    where?: Array<Expression>;
+  }
+
   export interface Assignment {
     type: "assignment";
     target: ColumnIdentifier;

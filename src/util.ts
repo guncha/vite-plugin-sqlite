@@ -31,9 +31,9 @@ export function assertNever(_x: never): never {
 export function generateArgumentName(arg: InputField, suffixIdx = false): string {
   const suffix = suffixIdx ? arg.idx : "";
   if (arg.name.startsWith("?")) {
-    return `p${arg.idx}${suffix}`;
+    return `p${arg.idx}`; // No suffix for anonymous arguments as they are already unique
   } else {
-    return arg.name.replace(/[^a-zA-Z0-9_]/g, "_") + suffix;
+    return arg.name.replace(/^[:@$]/, "").replace(/[^a-zA-Z0-9_]/g, "_") + suffix;
   }
 }
 

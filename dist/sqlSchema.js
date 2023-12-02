@@ -39,9 +39,12 @@ export function getSchema(queryText, db) {
     function addInputField(val, extra = {}) {
         assertEqual(val.type, "variable");
         // Always use the :name, $name or @name for named parameters
-        const name = val.format === "named" || val.format === "tcl"
-            ? val.name
-            : extra.name ?? val.name;
+        const isNamed = val.format === "named" || val.format === "tcl";
+        const name = isNamed ? val.name : extra.name ?? val.name;
+        // Don't add named parameters twice
+        if (isNamed && inputFields.some((field) => field.name === name)) {
+            return;
+        }
         inputFields.push({
             name,
             type: extra.type ?? "unknown",
@@ -105,6 +108,12 @@ export function getSchema(queryText, db) {
                     case "hexidecimal":
                         addInputField(node, {
                             type: "number",
+                            nullable: true,
+                        });
+                        break;
+                    case "null":
+                        addInputField(node, {
+                            type: "unknown",
                             nullable: true,
                         });
                         break;
@@ -292,6 +301,16 @@ export function getSchema(queryText, db) {
                 assertNever(stmt.from);
             }
         }
+        else if (isDeleteStatement(stmt)) {
+            assert(stmt.from.type === "identifier");
+            assert(stmt.from.variant === "table");
+            tables.push({
+                alias: stmt.from.alias,
+                name: stmt.from.name,
+                optional: false,
+                columns: getTableInfo(stmt.from.name),
+            });
+        }
         else {
             assertNever(stmt);
         }
@@ -431,7 +450,9 @@ function isUpdateStatement(node) {
         node.variant === "update");
 }
 function isTableStatement(node) {
-    return isSelectStatement(node) || isUpdateStatement(node);
+    return (isSelectStatement(node) ||
+        isUpdateStatement(node) ||
+        isDeleteStatement(node));
 }
 function isListExpression(node) {
     return (typeof node === "object" &&
@@ -444,6 +465,12 @@ function isInsertStatement(node) {
         node !== null &&
         node.type === "statement" &&
         node.variant === "insert");
+}
+function isDeleteStatement(node) {
+    return (typeof node === "object" &&
+        node !== null &&
+        node.type === "statement" &&
+        node.variant === "delete");
 }
 function isFunction(node) {
     return (typeof node === "object" &&

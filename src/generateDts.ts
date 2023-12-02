@@ -1,4 +1,4 @@
-import { QuerySchema } from "./sqlSchema.js";
+import { InputField, QuerySchema } from "./sqlSchema.js";
 import { generateArgumentName } from "./util.js";
 
 /** Generate a Typescript definition file for the query */
@@ -44,14 +44,29 @@ function generateParameters(schema: QuerySchema): string {
     }
   }
 
-  const fields = schema.inputFields
+  const namedFields = schema.inputFields.filter(
+    (field) => field.name.startsWith("$") || field.name.startsWith(":") || field.name.startsWith("@")
+  );
+
+  const unamedFields = schema.inputFields.filter(
+    (field) => namedFields.includes(field) === false
+  );
+
+  const fields = unamedFields
     .map(
       (field) =>
-        `${generateArgumentName(field, duplicateNames.has(field.name))}${
-          field.nullable ? `?` : ``
-        }: ${field.type}${field.nullable ? ` | null` : ``}`
+        fieldNameAndType(field)
     )
-    .join(", ");
 
-  return fields;
+  if (namedFields.length > 0) {
+    fields.push(`args: {${
+      namedFields.map(fieldNameAndType).join(", ")
+    }}`);
+  }
+
+  return fields.join(", ");
+
+  function fieldNameAndType(field: InputField): string {
+    return `${generateArgumentName(field, duplicateNames.has(field.name))}${field.nullable ? `?` : ``}: ${field.type}${field.nullable ? ` | null` : ``}`;
+  }
 }

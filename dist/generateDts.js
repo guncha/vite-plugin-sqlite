@@ -31,8 +31,15 @@ function generateParameters(schema) {
             duplicateNames.add(field.name);
         }
     }
-    const fields = schema.inputFields
-        .map((field) => `${generateArgumentName(field, duplicateNames.has(field.name))}${field.nullable ? `?` : ``}: ${field.type}${field.nullable ? ` | null` : ``}`)
-        .join(", ");
-    return fields;
+    const namedFields = schema.inputFields.filter((field) => field.name.startsWith("$") || field.name.startsWith(":") || field.name.startsWith("@"));
+    const unamedFields = schema.inputFields.filter((field) => namedFields.includes(field) === false);
+    const fields = unamedFields
+        .map((field) => fieldNameAndType(field));
+    if (namedFields.length > 0) {
+        fields.push(`args: {${namedFields.map(fieldNameAndType).join(", ")}}`);
+    }
+    return fields.join(", ");
+    function fieldNameAndType(field) {
+        return `${generateArgumentName(field, duplicateNames.has(field.name))}${field.nullable ? `?` : ``}: ${field.type}${field.nullable ? ` | null` : ``}`;
+    }
 }
