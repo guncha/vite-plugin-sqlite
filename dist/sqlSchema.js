@@ -264,8 +264,7 @@ export function getSchema(queryText, db) {
         const colInfo = getColumnInfo(table, column) ?? raise("Column not found");
         return colInfo.notnull === 0;
     }
-    function getTablesFromStatement(stmt) {
-        const tables = [];
+    function getTablesFromStatement(stmt, tables = []) {
         if (isUpdateStatement(stmt)) {
             assert(stmt.into.type === "identifier");
             assert(stmt.into.variant === "table");
@@ -303,6 +302,9 @@ export function getSchema(queryText, db) {
                         columns: getTableInfo(join.source.name),
                     });
                 }
+            }
+            else if (isSelectStatement(stmt.from)) {
+                getTablesFromStatement(stmt.from, tables);
             }
             else if (stmt.from?.type === "function" || stmt.from === undefined) {
                 // Nothing to do

@@ -362,10 +362,9 @@ export function getSchema(queryText: string, db: Database): QuerySchema {
   }
 
   function getTablesFromStatement(
-    stmt: SelectStatement | UpdateStatement | DeleteStatement
+    stmt: SelectStatement | UpdateStatement | DeleteStatement,
+    tables: TableInfo[] = []
   ): TableInfo[] {
-    const tables: TableInfo[] = [];
-
     if (isUpdateStatement(stmt)) {
       assert(stmt.into.type === "identifier");
       assert(stmt.into.variant === "table");
@@ -401,6 +400,8 @@ export function getSchema(queryText: string, db: Database): QuerySchema {
             columns: getTableInfo(join.source.name),
           });
         }
+      } else if (isSelectStatement(stmt.from)) {
+        getTablesFromStatement(stmt.from, tables);
       } else if (stmt.from?.type === "function" || stmt.from === undefined) {
         // Nothing to do
       } else {

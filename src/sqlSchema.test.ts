@@ -453,6 +453,62 @@ describe("getSchema", () => {
       `)
     )
   );
+  it(
+    ...parseTest("SELECT * FROM (SELECT * FROM FRUIT WHERE id = ?)", (query) =>
+      expect(query).toMatchInlineSnapshot(`
+        {
+          "inputFields": [
+            {
+              "idx": 1,
+              "name": "id",
+              "nullable": false,
+              "type": "string",
+            },
+          ],
+          "outputFields": [
+            {
+              "name": "id",
+              "nullable": false,
+              "type": "string",
+            },
+            {
+              "name": "name",
+              "nullable": false,
+              "type": "string",
+            },
+            {
+              "name": "color",
+              "nullable": true,
+              "type": "string",
+            },
+          ],
+        }
+      `)
+    )
+  );
+  it.only(
+    ...parseTest("SELECT id FROM (SELECT * FROM fruit WHERE color = 'red') UNION ALL SELECT fruitId FROM (SELECT * FROM stock WHERE fruitId = ?)", (query) =>
+      expect(query).toMatchInlineSnapshot(`
+        {
+          "inputFields": [
+            {
+              "idx": 1,
+              "name": "fruitid",
+              "nullable": false,
+              "type": "string",
+            },
+          ],
+          "outputFields": [
+            {
+              "name": "id",
+              "nullable": false,
+              "type": "string",
+            },
+          ],
+        }
+      `)
+    )
+  );
   it("should parse SELECT * FROM fts(?)", async () => {
     db.exec(`CREATE VIRTUAL TABLE fts USING fts5(foo);`);
     const query = await getSchema("SELECT * FROM fts(?)", db);
