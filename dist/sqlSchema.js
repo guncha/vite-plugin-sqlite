@@ -38,6 +38,16 @@ export function getSchema(queryText, db) {
     };
     function addInputField(val, extra = {}) {
         assertEqual(val.type, "variable");
+        // Try to extract the preceding JSDoc comment, if any, and look for @type {Foo} or @type {Foo|null}
+        const queryPrefix = queryText.slice(0, val.location.start.offset);
+        const [_, type, orNull] = queryPrefix.match(/\/\*\*\s*@type\s+{\s*([\w_]+)\s*(\|\s*null)?\s*}\s*\*\/\s*$/) ?? [];
+        if (type) {
+            extra = {
+                ...extra,
+                type: type.trim(),
+                nullable: !!orNull,
+            };
+        }
         // Always use the :name, $name or @name for named parameters
         const isNamed = val.format === "named" || val.format === "tcl";
         const name = isNamed ? val.name : extra.name ?? val.name;

@@ -109,8 +109,10 @@ describe("getSchema", () => {
     )
   );
   it(
-    ...parseTest("SELECT id FROM fruit WHERE color = iif(:color IS NULL, 'red', :color)", (query) =>
-      expect(query.inputFields).toMatchInlineSnapshot(`
+    ...parseTest(
+      "SELECT id FROM fruit WHERE color = iif(:color IS NULL, 'red', :color)",
+      (query) =>
+        expect(query.inputFields).toMatchInlineSnapshot(`
         [
           {
             "idx": 1,
@@ -123,8 +125,10 @@ describe("getSchema", () => {
     )
   );
   it(
-    ...parseTest("SELECT id FROM fruit WHERE name = ? OR color = $the_color", (query) =>
-      expect(query.inputFields).toMatchInlineSnapshot(`
+    ...parseTest(
+      "SELECT id FROM fruit WHERE name = ? OR color = $the_color",
+      (query) =>
+        expect(query.inputFields).toMatchInlineSnapshot(`
         [
           {
             "idx": 1,
@@ -631,6 +635,50 @@ describe("getSchema", () => {
       `)
     )
   );
+  describe("comments", () => {
+    it(
+      ...parseTest("SELECT id FROM fruit WHERE color = /** @type {number} */ ?", (query) =>
+        expect(query.inputFields).toMatchInlineSnapshot(`
+          [
+            {
+              "idx": 1,
+              "name": "color",
+              "nullable": false,
+              "type": "number",
+            },
+          ]
+        `)
+      )
+    );
+    it(
+      ...parseTest("SELECT id FROM fruit WHERE color = /** @type {fOo_BaR2} */ :barbaz", (query) =>
+        expect(query.inputFields).toMatchInlineSnapshot(`
+          [
+            {
+              "idx": 1,
+              "name": ":barbaz",
+              "nullable": false,
+              "type": "fOo_BaR2",
+            },
+          ]
+        `)
+      )
+    );
+    it(
+      ...parseTest("SELECT id FROM fruit WHERE color = /** @type {number | null} */ ?", (query) =>
+        expect(query.inputFields).toMatchInlineSnapshot(`
+          [
+            {
+              "idx": 1,
+              "name": "color",
+              "nullable": true,
+              "type": "number",
+            },
+          ]
+        `)
+      )
+    );
+  });
   describe.todo("with views", () => {
     beforeEach(() => {
       db.exec(

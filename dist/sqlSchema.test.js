@@ -498,6 +498,38 @@ describe("getSchema", () => {
           ],
         }
       `)));
+    describe("comments", () => {
+        it(...parseTest("SELECT id FROM fruit WHERE color = /** @type {number} */ ?", (query) => expect(query.inputFields).toMatchInlineSnapshot(`
+          [
+            {
+              "idx": 1,
+              "name": "color",
+              "nullable": false,
+              "type": "number",
+            },
+          ]
+        `)));
+        it(...parseTest("SELECT id FROM fruit WHERE color = /** @type {fOo_BaR2} */ :barbaz", (query) => expect(query.inputFields).toMatchInlineSnapshot(`
+          [
+            {
+              "idx": 1,
+              "name": ":barbaz",
+              "nullable": false,
+              "type": "fOo_BaR2",
+            },
+          ]
+        `)));
+        it(...parseTest("SELECT id FROM fruit WHERE color = /** @type {number | null} */ ?", (query) => expect(query.inputFields).toMatchInlineSnapshot(`
+          [
+            {
+              "idx": 1,
+              "name": "color",
+              "nullable": true,
+              "type": "number",
+            },
+          ]
+        `)));
+    });
     describe.todo("with views", () => {
         beforeEach(() => {
             db.exec("CREATE VIEW fruit_with_stock AS SELECT fruit.color, stock.quantity FROM fruit LEFT JOIN stock ON fruit.id = stock.fruitId");
