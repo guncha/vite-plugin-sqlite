@@ -40,6 +40,6 @@ function generateParameters(schema) {
     }
     return fields.join(", ");
     function fieldNameAndType(field) {
-        return `${generateArgumentName(field, duplicateNames.has(field.name))}${field.nullable ? `?` : ``}: ${field.type}${field.nullable ? ` | null` : ``}`;
+        return `${generateArgumentName(field, duplicateNames.has(field.name))}: ${field.type}${field.nullable ? ` | null` : ``}`;
     }
 }
